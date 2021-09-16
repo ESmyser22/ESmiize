@@ -1,0 +1,352 @@
+ ################################################################################
+# Rock, Paper, Scissors, Shoot!
+#
+# AUTHOR: Evan Smyser
+# CGS 3465 - Spring 2021
+# PROJECT NUMBER: 4
+# DUE DATE: 03/10/2021
+# PLATFORM:  macOS Big Sur / Python 3
+#
+# SUMMARY
+# 
+# This program is designed to simulate a game of Rock, Paper, Scissors. The user
+# will "play against a comupter" that randomly generates a response from one
+# of the three choices: rock, paper or scissors. Each player will receive $100 at
+# the start of the game, and the game will continue util a player runs out of
+# money or if the game reaches 20 rounds played. The rounds are decided as
+# follows:
+#
+#        Paper covers rock, paper wins.
+#        Scissors cut paper, scissors wins.
+#        Rock breaks scissors, rock wins.
+#        All matching combinations are ties.
+#
+# The results of each round will be displayed after the end of each round, and the
+# entire match summary will be displayed at the end of the game. This includes
+# the number of rounds played, the amount of money each player has, the number of
+# rounds won by each player.
+#
+# This program utilizes functions to organize the code in an easy-to-follow way.
+# There is a function to print the header, a function to control the flow of the
+# game, and a function to print the game results.
+#
+# INPUT
+#
+# The program asks the user to input a choice of 1, 2, 3 indicating either rock
+# paper, or scissors. This will be checked for errors (i.e. the user inputting
+# a number outside of the range). We assume the user will enter a number, when
+# asked for a number.
+#
+# Output
+#
+# The output will include a title, a description of the game and program,
+# and instructions on how to play the game.
+#
+# The output will also include a report of the events of the game which includes 
+# what the user selected, what the computer selected, who won that round,
+# the total score of the game (how much each player has), as well as a recap
+# at the end of the program.
+#
+###################################################################################
+
+
+
+# Constants that are used throughout the program.
+
+ROCK = 1            # Constant for rock selection     
+PAPER = 2           # Constant for paper selection
+SCISSORS = 3        # Constant for scissor selection
+MAX_ROUNDS = 20     # Maximum number allowed to be played in a match.
+  
+################################################################################
+
+def main():
+    printHeader()
+    play()
+
+################################################################################
+
+# This funciton will be called to start the game-playing process. It has several
+# other functions within it that each do their own tasks and deliver data back
+# to this function.
+
+def play():
+
+    ROUNDS = 1              # Counter for the number of rounds played
+    playerMoney = 100       # Variable for tracking the player's money
+    cpuMoney = 100          # Tracking the CPU's money
+    playerScore = 0         # Tracks the number of times the user has won.
+    cpuScore = 0            # Tracks the number of wins the computer has.
+
+    didPlayerWin = True     # Initializing flag for round results
+    wasRoundTie = True      # Initializing flag for Tie scenario
+
+    # While loop checks to see if too many rounds have been played or if
+    # a player runs out of money.
+
+    while (ROUNDS <= MAX_ROUNDS) and (playerMoney != 0) and (cpuMoney != 0):
+        
+        # Print a line to easily separate the rounds
+
+        print("\n************************************************************")
+
+        # Ask the user for their option.
+        
+        returned_user = getUserChoice()
+
+        # Get the results from the computer.
+        
+        returned_cpu = getComputerChoice()
+
+        # Check to see if there was a tie that round.
+
+        wasRoundTie = checkTie(returned_user, returned_cpu)
+
+        # If round was not a tie, check to see if the user won the round.
+        
+        if (wasRoundTie == False):
+
+            # Use the compareResults() function to determine who won the round.
+            
+            didPlayerWin = compareResults(returned_user, returned_cpu)
+
+            # Gather results from the roundResults() function. Assign them to
+            # their respective variables. I DID NOT KNOW HOW TO TRUNCATE THIS
+            # LINE OF CODE OR SEPARATE IT SO THAT IT DID NOT EXCEEDE 80 CHAR!
+
+            playerMoney, cpuMoney, playerScore, cpuScore = roundResults(didPlayerWin, playerMoney, cpuMoney, playerScore, cpuScore)
+            
+        else:
+            print("The round resulted in a tie.\n")
+            print(f"Player 1 has ${playerMoney:,.2f}.")
+            print(f"Player 2 has ${cpuMoney:,.2f}.")
+
+        # Display how much money each player has after the roundDisplay the number of rounds that have been played and
+        # add one to the ROUNDS counter. 
+        
+        print("The number of rounds you have played: ", ROUNDS)
+        ROUNDS = ROUNDS + 1
+
+    # End of match summary
+
+    gameSum(playerMoney, cpuMoney, playerScore, cpuScore, ROUNDS)
+
+    
+    
+################################################################################
+
+# This is a simple function consisting of print statemetns formatted to display
+# a visually pleaseing and inviting header to the player.
+
+def printHeader():
+
+    # Print out the title.
+
+    print("---------------------------------------------------------------------"
+          "-----------")
+    print("              WELCOME TO THE ROCK, PAPER, SCIESSORS SHOWDOW!  "
+          "        ")
+    print("---------------------------------------------------------------------"
+          "-----------")
+    
+    # Print out a saulation and rules.
+
+    print("Here, your skills will be put to ultimate test against a world class")
+    print("computer alorithm that is designed to beat any challenger. No one has")
+    print("even come close to defeating the champion!")
+
+    print("\nIn this game, each player will choose either Rock, Paper,"
+          "or Scissors.")
+    print("Their results will be compared to eachother and the winner will be")
+    print("determined as follows:")
+
+    print("\n     Player 1     Player 2                   Result")
+    print("    ----------   ----------     -------------------------------------")
+    print("     Rock          Paper         Paper covers Rock; Player 2 wins.")
+    print("     Paper         Scissors      Scissors cuts Paper; Player 2 wins.")
+    print("     Scissors      Rock          Rock breaks Scissors; Player 2 wins.")
+    print("\n        Any matching combination will result in a tie.")
+
+
+    print("\nBoth players will start with $100 and the loser of each round pays")
+    print("the winner of the round $10. The game will be over either when a")
+    print("player runs out of money or if 20 rounds have been played.")
+
+################################################################################
+
+# This function will display the list of options the user can select, either
+# 1, 2, or 3 will be accepted. If the user inputs a number out of the range,
+# they will be asked repeatedly to enter in a valid number.
+
+def getUserChoice():
+
+    # Define variables
+    
+    user_choice = 0     # Variable for the user's choice.
+
+    # Use a while loop to check for errors and repeat the prompt if the user
+    # enters invalid input.
+
+    while (user_choice < ROCK or user_choice > SCISSORS):
+
+        print("\nWhat would you like to pick for this round?")
+        print("Enter (1) for rock, (2) for paper, or (3) for scissors.")
+
+        user_choice = int(input("Enter your choice: "))
+
+        # Using an if-elif statement to determine if the user input is valid
+        # if so, we will repeat the user's input back to them. If the input
+        # was outside of the range 1-3, we will tell the user, and have the
+        # while loop repeat.
+
+        if (user_choice < ROCK or user_choice > SCISSORS):
+            print("\nYou entered an invalid number.")
+            
+        elif (user_choice == ROCK):
+            print("\nYou picked (1) for ROCK!")
+            
+        elif (user_choice == PAPER):
+            print("\nYou picked (2) for PAPER!")
+            
+        elif (user_choice == SCISSORS):
+            print("\nYou picked (3) for SCISSORS!")
+
+    return user_choice
+
+
+################################################################################
+
+
+def getComputerChoice():
+    
+    import random           # Access the random number module
+
+    # Use the random number function to pick a number between 1 and 3. This
+    # will serve as the computers choice. Store it in the cpuPick variable.
+
+    cpu_choice = random.randint(1, 3)
+
+    if (cpu_choice == ROCK):
+        print("The computer picked (1) for ROCK!")
+        
+    elif (cpu_choice== PAPER):
+        print("The computer picked (2) PAPER!")
+
+    elif (cpu_choice == SCISSORS):
+        print("The computer picked (3) SCISSORS!")
+
+    return cpu_choice
+
+
+################################################################################
+
+# This function will accept the results from the getUserChoice and
+# getComputerChoice functions, compare the two, and return the results back to
+# the play function.
+
+def compareResults(user, cpu):
+    
+    playerwin = True        # Set up player win flag
+    
+    # If the player wins that round, return playerwin = true.
+    
+    if (user == ROCK and cpu == SCISSORS):
+        playerwin = True
+    elif (user == PAPER and cpu == ROCK):
+        playerwin = True
+    elif (user == SCISSORS and cpu == PAPER):
+        playerwin = True
+
+   # Check to see if the player won the match, if now set playerwin flag to false.
+        
+    if (user == ROCK and cpu == PAPER):
+        playerwin = False
+    elif (user == PAPER and cpu == SCISSORS):
+        playerwin = False
+    elif(user == SCISSORS and cpu == ROCK):
+        playerwin = False
+
+
+    # Return the playerwin flag to Play().
+    
+    return(playerwin)
+  
+
+################################################################################   
+
+def checkTie(user, cpu):
+    
+    TIE = True                  # Initialize TIE flag
+
+    # Check to see if the round resulted in a tie.
+    # If the round results in a tie, return nothing.
+    
+    if (user == ROCK and cpu == ROCK):
+        TIE = True
+    elif (user == PAPER and cpu == PAPER):
+        TIE = True
+    elif (user == SCISSORS and cpu == SCISSORS):
+        TIE = True
+    else:
+        TIE = False    
+
+    
+    return(TIE)                 # Return tie flag
+
+################################################################################
+
+def roundResults(playerWon, playerM, cpuM, playerScore, cpuScore):
+
+# If the player wins the round, let them know that they won. Add money to
+# the winner's balance and deduct it from the loser's balance. Also, add a point
+# to the round winner's score.
+    
+    if playerWon == True:                   # If the player wins
+        print("You won the round!\n")
+        playerM = playerM + 10              # Add $10 to the player1 money
+        cpuM = cpuM - 10                    # Deduct 10 from the cpu money
+        playerScore = playerScore + 1       # Add a point to the players score
+    else:                                   # If the player loses.
+        print("You lost the round!\n")
+        playerM = playerM - 10              # Deduct 10 from player's money
+        cpuM = cpuM + 10                    # Add 10 to the computer's money
+        cpuScore = cpuScore + 1             # Add 1pt to the computer's score
+
+    # Display the amount of money each player has.
+    
+    print(f"Player 1 has ${playerM:,.2f}.")
+    print(f"Player 2 has ${cpuM:,.2f}.")
+    
+    # Return to the play() function.
+
+    return(playerM, cpuM, playerScore, cpuScore)
+
+    
+
+################################################################################
+
+def gameSum(playerM, cpuM, playerWins, cpuWins, rndsPlayed):
+
+    # Here we are printing out the game summary. This includes the amount of moeny
+    # each player has at the end of the game, the amount of rounds won by each player
+    # and the total number of rounds played.
+
+    print("\nThe game is over!\n")
+    print(f"You ended up with ${playerM:,.2f}.")
+    print(f"Your opponent ended up with ${cpuM:,.2f}.")
+    print(f"You won a total of {playerWins} rounds.")
+    print(f"Your opponenet won a total of {cpuWins} rounds.")
+
+# Use an if statement to tell the user if the won, tied, or lost the game,
+
+    if (playerWins > cpuWins):
+        print("\nCONGRATS! YOU WON THE GAME!")
+    elif (playerWins == cpuWins):
+        print("\nThe game resulted in a tie.")
+    else:
+        print("\nSorry, you lost. Better luck next time!")
+
+
+################################################################################
+
+main()   # run the main function to execute the program
